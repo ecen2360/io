@@ -50,22 +50,58 @@ def nios2_as(asm):
     p.stdout.close()
     p.stderr.close()
 
-    ######## objdump
-    p = subprocess.Popen(['./gethex.sh', exe_f.name], \
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ##### objcopy to get full memory dump
+    mem_f = tempfile.NamedTemporaryFile("w+b")
+    p = subprocess.Popen(['bin/nios2-elf-objcopy', '-O', 'binary', \
+                        '--gap-fill', '0x00', \
+                        exe_f.name, mem_f.name],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if p.wait() != 0:
-        ret = 'Objdump error: %s' % p.stderr.read()
+        ret = 'Objcopy error: %s' % p.stderr.read()
         p.stderr.close()
         p.stdout.close()
         exe_f.close()
+        mem_f.close()
         return ret
 
-    obj = json.loads(p.stdout.read().decode('ascii'))
-    p.stdout.close()
-    p.stderr.close()
+    prog = mem_f.read().hex()
+
+
+    ##### nm
+    out = subprocess.check_output(["bin/nios2-elf-nm", "-n", "--defined-only", exe_f.name],
+        text=True
+    )
+
+    symbols = {}
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) >= 3:
+            addr, typ, name = parts
+            symbols[name] = int(addr, 16)
+
+    obj = {'prog': prog, 'symbols': symbols}
+
+    mem_f.close()
     exe_f.close()
 
     return obj
+
+    ######## objdump
+    #p = subprocess.Popen(['./gethex.sh', exe_f.name], \
+    #                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #if p.wait() != 0:
+    #    ret = 'Objdump error: %s' % p.stderr.read()
+    #    p.stderr.close()
+    #    p.stdout.close()
+    #    exe_f.close()
+    #    return ret
+
+    #obj = json.loads(p.stdout.read().decode('ascii'))
+    #p.stdout.close()
+    #p.stderr.close()
+    #exe_f.close()
+
+    #return obj
 
 def get_clobbered(cpu):
     feedback = ''

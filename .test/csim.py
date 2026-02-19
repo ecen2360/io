@@ -22,7 +22,8 @@ class Nios2(object):
         if obj is not None:
             self.obj = obj
             self.symbols = obj['symbols']
-            init_mem = flip_word_endian(bytes.fromhex(obj['prog']))
+            #init_mem = flip_word_endian(bytes.fromhex(obj['prog']))
+            init_mem = bytes.fromhex(obj['prog'])
             start_pc = obj['symbols']['_start']
 
         self.init_mem = init_mem
