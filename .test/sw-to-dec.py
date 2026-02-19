@@ -10,6 +10,38 @@ def hexd(n):
     return struct.unpack('>I', bytes(n_bytes).rjust(4, b'\x00'))[0]       # combine into 32-bit value
 
 
+def seg_to_rows(seg_byte):
+    """Convert a 7-segment byte to 3 rows of ASCII art (3 chars wide each).
+
+    Bit layout:
+      bit 0 = a (top)        bit 4 = e (bottom-left)
+      bit 1 = b (top-right)  bit 5 = f (top-left)
+      bit 2 = c (bot-right)  bit 6 = g (middle)
+      bit 3 = d (bottom)
+    """
+    a = (seg_byte >> 0) & 1
+    b = (seg_byte >> 1) & 1
+    c = (seg_byte >> 2) & 1
+    d = (seg_byte >> 3) & 1
+    e = (seg_byte >> 4) & 1
+    f = (seg_byte >> 5) & 1
+    g = (seg_byte >> 6) & 1
+    return [
+        ' _ ' if a else '   ',
+        ('|' if f else ' ') + ('_' if g else ' ') + ('|' if b else ' '),
+        ('|' if e else ' ') + ('_' if d else ' ') + ('|' if c else ' '),
+    ]
+
+def display_ascii(val32):
+    """Return 3 lines of ASCII art for a 4-digit 7-seg display value.
+
+    The 32-bit word maps as: bits 31:24 -> HEX3 (leftmost) ... bits 7:0 -> HEX0 (rightmost).
+    """
+    segs = [(val32 >> (8 * i)) & 0xff for i in range(3, -1, -1)]
+    digit_rows = [seg_to_rows(s) for s in segs]
+    return [' '.join(d[r] for d in digit_rows) for r in range(3)]
+
+
 def check_sw(asm, tests):
     obj = nios2_as(asm.encode('utf-8'))
     cpu = Nios2(obj=obj)
@@ -59,7 +91,15 @@ def check_sw(asm, tests):
         val = mmio.get_hex()
 
         if val != expected:
-            print(f'Error: set switches to {sw}, 7seg set to 0x{val:04x} (should be 0x{expected:04x})') 
+            got_lines = display_ascii(val)
+            exp_lines = display_ascii(expected)
+            col_w = 24  # wide enough for label + 15-char display
+            exp_label = f'Expected (0x{expected:08x}):'
+            got_label = f'Got (0x{val:08x}):'
+            print(f'Error: set switches to {sw}')
+            print(f'  {exp_label:<{col_w}}  {got_label}')
+            for el, gl in zip(exp_lines, got_lines):
+                print(f'  {el:<{col_w}}  {gl}')
             passed = False
             
 
