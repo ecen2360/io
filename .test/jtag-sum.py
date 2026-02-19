@@ -34,7 +34,7 @@ def check_jtag(asm, tests):
             self.drain_tx_fifo()
             parts = self.recvd.split('\n', 1)
             if len(parts) != 2:
-                return ''
+                return self.recvd
             r, self.recvd = parts
             return r + '\n'
 
@@ -120,12 +120,12 @@ def check_jtag(asm, tests):
         cpu.unhalt()
 
     def encode(s):
-        return '\'%s\' %s' % (ascii(s), ''.join([f"{ord(c):02x}" for c in s]))
+        return '%s %s' % (ascii(s), ''.join([f"{ord(c):02x}" for c in s]))
 
     class InvalidRecv(Exception):
         def __init__(self, s, log, prefix="Error: Unexpected result"):
             self.s = s
-            self.message = prefix + ' got %s' % encode(s) + '\nLog so far: %s' % encode(log)
+            self.message = prefix + ' got %s' % encode(s) + '\n\nFull transcript:\n%s' % encode(log)
             super().__init__(self.message) # Call the base class constructor
 
 
