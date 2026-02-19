@@ -106,6 +106,11 @@ def check_jtag(asm, tests):
             self.message = m
             super().__init__(self.message)
 
+    def filtered_error(cpu):
+        err = cpu.get_error()
+        lines = [l for l in err.splitlines() if 'Instruction limit reached' not in l]
+        return '\n'.join(lines)
+
     def run_a_bit(cpu, n_instrs=1000):
         #for i in range(n_instrs):
         #    cpu.one_step()
@@ -189,7 +194,7 @@ def check_jtag(asm, tests):
     if passed:
         return (True, err, u.extra_info)
 
-    return (False, err, u.extra_info + get_debug(cpu, mem_len=0x200))
+    return (False, err, u.extra_info + filtered_error(cpu) + get_debug(cpu, mem_len=0x200, show_error=False))
 
 
 import sys
