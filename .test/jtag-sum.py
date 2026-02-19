@@ -181,11 +181,9 @@ def check_jtag(asm, tests):
 
     except InvalidRecv as e: 
         err = e.message
-        #print(e.message)
         passed = False
     except HaltedCPU as e:
         err = e.message
-        #print(e.message)
         passed = False
 
     if passed:
