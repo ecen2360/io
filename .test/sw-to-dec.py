@@ -59,6 +59,9 @@ def check_sw(asm, tests):
             # TODO
             print('Error: This CPU does not support word-unaligned MMIO (e.g. stbio unsupported')
             return
+        def write_upper_hex(self, val):
+            self.cur_hex = (self.cur_hex & 0xffffffff) | (val << 32)
+
         def read_sw(self):
             return self.cur_sw
 
@@ -75,6 +78,10 @@ def check_sw(asm, tests):
     cpu.add_mmio(0xFF200021, mmio.write_hex_byte)
     cpu.add_mmio(0xFF200022, mmio.write_hex_byte)
     cpu.add_mmio(0xFF200023, mmio.write_hex_byte)
+    cpu.add_mmio(0xFF200030, mmio.write_upper_hex)
+    cpu.add_mmio(0xFF200031, mmio.write_hex_byte)
+    cpu.add_mmio(0xFF200032, mmio.write_hex_byte)
+    cpu.add_mmio(0xFF200033, mmio.write_hex_byte)
 
     passed = True
 
